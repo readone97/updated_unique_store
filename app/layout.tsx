@@ -7,7 +7,7 @@ import { Toaster } from "sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Unique Store - Inventory Management System",
+  title: "Auto View Store - Inventory Management System",
   description: "Complete inventory management solution for retail stores",
     generator: 'v0.dev'
 }
@@ -26,3 +26,4 @@ export default function RootLayout({
     </html>
   )
 }
+

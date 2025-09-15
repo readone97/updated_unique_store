@@ -82,6 +82,12 @@ export default function ProductsPage() {
       return
     }
 
+    const stockValue = parseInt(newProduct.stock)
+    if (stockValue < 0) {
+      toast.warning("Stock cannot be negative")
+      return
+    }
+
     try {
       const response = await fetch('/api/products', {
         method: 'POST',
@@ -92,7 +98,7 @@ export default function ProductsPage() {
           name: newProduct.name,
           category: newProduct.category,
           price: parseFloat(newProduct.price),
-          stock: parseInt(newProduct.stock),
+          stock: Math.max(0, stockValue), // Ensure stock is never negative
           minStock: parseInt(newProduct.minStock) || 10,
           supplier: newProduct.supplier || "Unknown",
         }),
@@ -152,7 +158,7 @@ export default function ProductsPage() {
   const handleUpdateProduct = async () => {
     if (!editingProduct) return
 
-    if (!editingProduct.name || !editingProduct.category || !editingProduct.price || !editingProduct.stock) {
+    if (!editingProduct.name || !editingProduct.category || !editingProduct.price || editingProduct.stock === undefined) {
       toast.warning("Please fill in all required fields")
       return
     }
@@ -183,7 +189,7 @@ export default function ProductsPage() {
           name: editingProduct.name,
           category: editingProduct.category,
           price: editingProduct.price,
-          stock: editingProduct.stock,
+          stock: Math.max(0, editingProduct.stock), // Ensure stock is never negative
           minStock: editingProduct.minStock,
           supplier: editingProduct.supplier || "Unknown",
         }),
@@ -215,7 +221,28 @@ export default function ProductsPage() {
     return matchesSearch && matchesCategory
   })
 
-  const getStatusBadge = (status: string) => {
+  // Add helper function to handle stock input changes
+  const handleStockChange = (value: string, isEdit: boolean = false) => {
+    const numericValue = parseInt(value) || 0
+    const clampedValue = Math.max(0, numericValue) // Ensure value is never negative
+    
+    if (isEdit && editingProduct) {
+      setEditingProduct({ ...editingProduct, stock: clampedValue })
+    } else {
+      setNewProduct({ ...newProduct, stock: clampedValue.toString() })
+    }
+  }
+
+  // Add helper function to calculate status based on stock
+  const calculateStatus = (stock: number): 'In Stock' | 'Low Stock' | 'Out of Stock' => {
+    if (stock === 0) return 'Out of Stock'
+    if (stock < 10) return 'Low Stock'
+    return 'In Stock'
+  }
+
+  // Update getStatusBadge to use calculated status
+  const getStatusBadge = (product: Product) => {
+    const status = calculateStatus(product.stock)
     if (status === "Out of Stock") {
       return <Badge variant="destructive">Out of Stock</Badge>
     } else if (status === "Low Stock") {
@@ -306,27 +333,11 @@ export default function ProductsPage() {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                    <SelectItem value="Casing">Casing</SelectItem>
-                      <SelectItem value="Remote_xhorse">Remote Xhorse</SelectItem>
-                      <SelectItem value="Remote_keyDiy">Remote KeyDiy</SelectItem>
-                      <SelectItem value="Valet_Key">Valet Key</SelectItem>
-                      <SelectItem value="Keyholder">Keyholder</SelectItem>
-                      <SelectItem value="Jacket">Key Jacket</SelectItem>
-                      <SelectItem value="Battery">Battery</SelectItem>
-                       <SelectItem value="Programming">Programming</SelectItem>
-                       <SelectItem value="Used_Keys">Used Keys</SelectItem>
-                      <SelectItem value="After_Market">After Market</SelectItem>
-                      <SelectItem value="Work">Labour</SelectItem>
-                      <SelectItem value="Blade">Blade</SelectItem>
-                      <SelectItem value="Emulator">Emulator</SelectItem>
-                      <SelectItem value="Blade">Blade</SelectItem>
-                      <SelectItem value="Pcb">PCB</SelectItem>
-                      <SelectItem value="Chip">Transponder Chip</SelectItem>
-                      <SelectItem value="Original">Original Key</SelectItem>
-                      <SelectItem value="Keyless">Keyless</SelectItem>
-                      <SelectItem value="OEM">OEM Key</SelectItem>
+                
+                      <SelectItem value="Detergents">Detergents</SelectItem>
+                      <SelectItem value="Provisions">Provisions</SelectItem>
                       <SelectItem value="Others">Others</SelectItem>
-                       
+                 
 
                         </SelectContent>
                       </Select>
@@ -352,9 +363,10 @@ export default function ProductsPage() {
                       <Input
                         id="stock"
                         type="number"
+                        min="0"
                         className="col-span-3"
                         value={newProduct.stock}
-                        onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                        onChange={(e) => handleStockChange(e.target.value, false)}
                         placeholder="0"
                       />
                     </div>
@@ -436,29 +448,9 @@ export default function ProductsPage() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                       <SelectItem value="Casing">Casing</SelectItem>
-                      <SelectItem value="Remote_xhorse">Remote Xhorse</SelectItem>
-                      <SelectItem value="Remote_keyDiy">Remote KeyDiy</SelectItem>
-                      <SelectItem value="Valet_Key">Valet Key</SelectItem>
-                      <SelectItem value="Keyholder">Keyholder</SelectItem>
-                      <SelectItem value="Jacket">Key Jacket</SelectItem>
-                      <SelectItem value="Battery">Battery</SelectItem>
-                       <SelectItem value="Programming">Programming</SelectItem>
-                       <SelectItem value="Used_Keys">Used Keys</SelectItem>
-                      <SelectItem value="After_Market">After Market</SelectItem>
-                      <SelectItem value="Work">Labour</SelectItem>
-                      <SelectItem value="Blade">Blade</SelectItem>
-                      <SelectItem value="Emulator">Emulator</SelectItem>
-                      <SelectItem value="Blade">Blade</SelectItem>
-                      <SelectItem value="Pcb">PCB</SelectItem>
-                      <SelectItem value="Chip">Transponder Chip</SelectItem>
-                      <SelectItem value="Original">Original Key</SelectItem>
-                      <SelectItem value="Keyless">Keyless</SelectItem>
-                      <SelectItem value="OEM">OEM Key</SelectItem>
+                      <SelectItem value="Detergents">Detergents</SelectItem>
+                      <SelectItem value="Provisions">Provisions</SelectItem>
                       <SelectItem value="Others">Others</SelectItem>
-                       
-
-                        
                       </SelectContent>
                     </Select>
                   </div>
@@ -483,9 +475,10 @@ export default function ProductsPage() {
                     <Input
                       id="edit-stock"
                       type="number"
+                      min="0"
                       className="col-span-3"
                       value={editingProduct.stock.toString()}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => handleStockChange(e.target.value, true)}
                       placeholder="0"
                     />
                   </div>
@@ -550,28 +543,9 @@ export default function ProductsPage() {
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     
-                       <SelectItem value="Casing">Casing</SelectItem>
-                      <SelectItem value="Remote_xhorse">Remote Xhorse</SelectItem>
-                      <SelectItem value="Remote_keyDiy">Remote KeyDiy</SelectItem>
-                      <SelectItem value="Valet_Key">Valet Key</SelectItem>
-                      <SelectItem value="Keyholder">Keyholder</SelectItem>
-                      <SelectItem value="Jacket">Key Jacket</SelectItem>
-                      <SelectItem value="Battery">Battery</SelectItem>
-                       <SelectItem value="Programming">Programming</SelectItem>
-                       <SelectItem value="Used_Keys">Used Keys</SelectItem>
-                      <SelectItem value="After_Market">After Market</SelectItem>
-                      <SelectItem value="Work">Labour</SelectItem>
-                      <SelectItem value="Blade">Blade</SelectItem>
-                      <SelectItem value="Emulator">Emulator</SelectItem>
-                      <SelectItem value="Blade">Blade</SelectItem>
-                      <SelectItem value="Pcb">PCB</SelectItem>
-                      <SelectItem value="Chip">Transponder Chip</SelectItem>
-                      <SelectItem value="Original">Original Key</SelectItem>
-                      <SelectItem value="Keyless">Keyless</SelectItem>
-                      <SelectItem value="OEM">OEM Key</SelectItem>
+                    <SelectItem value="Detergents">Detergents</SelectItem>
+                      <SelectItem value="Provisions">Provisions</SelectItem>
                       <SelectItem value="Others">Others</SelectItem>
-                       
-
                   </SelectContent>
                 </Select>
                 <Button variant="outline">
@@ -626,7 +600,7 @@ export default function ProductsPage() {
                           <span className="text-xs text-gray-500">Min: {product.minStock}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(product.status)}</TableCell>
+                      <TableCell>{getStatusBadge(product)}</TableCell>
                       <TableCell>{product.supplier}</TableCell>
                       {role === 'admin' && (
                         <TableCell>

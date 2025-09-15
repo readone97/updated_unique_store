@@ -19,7 +19,7 @@ export async function PUT(
     if (updates.stock !== undefined) {
       updates.status = updates.stock === 0 
         ? 'Out of Stock' 
-        : updates.stock <= (updates.minStock || 10)
+        : updates.stock < 10
           ? 'Low Stock'
           : 'In Stock'
     }

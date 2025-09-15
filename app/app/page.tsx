@@ -425,27 +425,11 @@ export default function Dashboard() {
                       className="h-8 px-2 border rounded text-sm"
                     >
                       <option value="all">All Categories</option>
-                    
-                    <option value="Casing">Casing</option>
-                      <option value="Remote_xhorse">Remote Xhorse</option>
-                      <option value="Remote_keyDiy">Remote KeyDiy</option>
-                      <option value="Valet_Key">Valet Key</option>
-                      <option value="Keyholder">Keyholder</option>
-                      <option value="Jacket">Key Jacket</option>
-                      <option value="Battery">Battery</option>
-                      <option value="Work">Labour</option>
-                      <option value="Blade">Blade</option>
-                      <option value="Emulator">Emulator</option>
-                      <option value="Blade">Blade</option>
-                      <option value="Used_Keys">Used Keys</option>
-                      <option value="Programming">Programming</option>
-                      <option value="After_Market">After Market</option>
-                      <option value="Pcb">PCB</option>
-                      <option value="Chip">Transponder Chip</option>
-                      <option value="Original">Original Key</option>
-                      <option value="Keyless">Keyless</option>
-                      <option value="OEM">OEM Key</option>
+                      <option value="Detergents">Detergents</option>
+                      <option value="Provisions">Provisions</option>
                       <option value="Others">Others</option>
+                    
+                    
                     </select>
                   </div>
                 </div>
@@ -541,14 +525,14 @@ export default function Dashboard() {
                 {selectedProducts.length > 0 && (
                   <div className="mt-4 p-3 bg-blue-50 rounded border">
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      {/* <div className="flex justify-between text-sm">
                         <span>Subtotal:</span>
                         <span>₦{calculateTotal().toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Tax (8%):</span>
                         <span>₦{(calculateTotal() * 0.08).toFixed(2)}</span>
-                      </div>
+                      </div> */}
                       <div className="border-t pt-2 flex justify-between font-bold">
                         <span>Total:</span>
                         <span>₦{(calculateTotal() * 1.08).toFixed(2)}</span>

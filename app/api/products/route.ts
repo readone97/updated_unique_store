@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     
     const status = productData.stock === 0 
       ? 'Out of Stock' 
-      : productData.stock <= (productData.minStock || 10)
+      : productData.stock < 10
         ? 'Low Stock'
         : 'In Stock'
 

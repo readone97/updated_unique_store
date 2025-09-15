@@ -544,13 +544,13 @@ export default function Dashboard() {
                         <span>Subtotal:</span>
                         <span>₦{calculateTotal().toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
+{/*                       <div className="flex justify-between text-sm">
                         <span>Tax (8%):</span>
                         <span>₦{(calculateTotal() * 0.08).toFixed(2)}</span>
-                      </div>
+                      </div> */}
                       <div className="border-t pt-2 flex justify-between font-bold">
                         <span>Total:</span>
-                        <span>₦{(calculateTotal() * 1.08).toFixed(2)}</span>
+                        <span>₦{(calculateTotal() ).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -595,3 +595,4 @@ export default function Dashboard() {
     </div>
   )
 }
+

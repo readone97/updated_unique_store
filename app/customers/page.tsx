@@ -28,6 +28,8 @@ export default function CustomersPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
   const [additionalPayment, setAdditionalPayment] = useState("")
+  const [additionalDebt, setAdditionalDebt] = useState("")
+  const [isDebtDialogOpen, setIsDebtDialogOpen] = useState(false)
   const [role, setRole] = useState<'admin' | 'user' | null>(null)
 
   useEffect(() => {
@@ -67,8 +69,8 @@ export default function CustomersPage() {
     }
 
     const paymentAmount = parseFloat(additionalPayment)
-    if (paymentAmount <= 0 || paymentAmount > (selectedSale.remainingBalance || 0)) {
-      toast.warning("Payment amount must be greater than 0 and not exceed remaining balance")
+    if (paymentAmount < 0 || paymentAmount > (selectedSale.remainingBalance || 0)) {
+      toast.warning("Payment amount must be 0 or greater and not exceed remaining balance")
       return
     }
 
@@ -93,6 +95,42 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error recording payment:', error)
       toast.error("An error occurred while recording the payment")
+    }
+  }
+
+  const handleAdditionalDebt = async () => {
+    if (!selectedSale || !additionalDebt) {
+      toast.warning("Please enter a valid debt amount")
+      return
+    }
+
+    const debtAmount = parseFloat(additionalDebt)
+    if (debtAmount <= 0) {
+      toast.warning("Debt amount must be greater than 0")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sales/${selectedSale._id}/debt`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ additionalDebt: debtAmount }),
+      })
+
+      if (response.ok) {
+        toast.success("Additional debt recorded successfully!")
+        setAdditionalDebt("")
+        setIsDebtDialogOpen(false)
+        setSelectedSale(null)
+        fetchPartialPayments() // Refresh data
+      } else {
+        toast.error("Failed to record additional debt")
+      }
+    } catch (error) {
+      console.error('Error recording debt:', error)
+      toast.error("An error occurred while recording the debt")
     }
   }
 
@@ -256,6 +294,17 @@ export default function CustomersPage() {
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSale(payment)
+                                setIsDebtDialogOpen(true)
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <DollarSign className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -320,6 +369,54 @@ export default function CustomersPage() {
                 Cancel
               </Button>
               <Button onClick={handleAdditionalPayment}>Record Payment</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Additional Debt Dialog */}
+        <Dialog open={isDebtDialogOpen} onOpenChange={setIsDebtDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add Additional Debt</DialogTitle>
+              <DialogDescription>
+                Add additional debt for {selectedSale?.customerName}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedSale && (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Invoice:</Label>
+                  <div className="col-span-3 font-mono text-sm">{selectedSale.invoiceId}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Current Balance:</Label>
+                  <div className="col-span-3 text-red-600 font-medium">
+                    ₦{(selectedSale.remainingBalance || 0).toFixed(2)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="debt" className="text-right">
+                    Additional Debt:
+                  </Label>
+                  <Input
+                    id="debt"
+                    type="number"
+                    step="0.01"
+                    className="col-span-3"
+                    value={additionalDebt}
+                    onChange={(e) => setAdditionalDebt(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDebtDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAdditionalDebt} className="bg-red-600 hover:bg-red-700">
+                Add Debt
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

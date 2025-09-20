@@ -8,11 +8,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { additionalPayment } = await request.json()
+    const { additionalDebt } = await request.json()
     
-    if (additionalPayment === undefined || additionalPayment === null || additionalPayment < 0) {
+    if (!additionalDebt || additionalDebt <= 0) {
       return NextResponse.json(
-        { message: 'Invalid payment amount' },
+        { message: 'Invalid debt amount' },
         { status: 400 }
       )
     }
@@ -28,19 +28,18 @@ export async function PUT(
       )
     }
 
-    const newAmountPaid = (sale.amountPaid || 0) + additionalPayment
-    const newRemainingBalance = sale.total - newAmountPaid
-    const newStatus = newRemainingBalance <= 0 ? 'Completed' : 'Partial Payment'
+    const newRemainingBalance = (sale.remainingBalance || 0) + additionalDebt
+    const newTotal = sale.total + additionalDebt
 
     const updatedSale = await updateSale(params.id, {
-      amountPaid: newAmountPaid,
-      remainingBalance: Math.max(0, newRemainingBalance),
-      status: newStatus
+      total: newTotal,
+      remainingBalance: newRemainingBalance,
+      status: 'Partial Payment'
     })
 
     return NextResponse.json(updatedSale)
   } catch (error) {
-    console.error('Update payment error:', error)
+    console.error('Add debt error:', error)
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

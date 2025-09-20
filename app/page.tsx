@@ -355,7 +355,7 @@ export default function Dashboard() {
 
         {/* Quick Sale Dialog */}
         <Dialog open={isQuickSaleOpen} onOpenChange={setIsQuickSaleOpen}>
-          <DialogContent className="sm:max-w-[900px] max-h-[80vh]">
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Quick Sale</DialogTitle>
               <DialogDescription>Select products to create a new sale transaction.</DialogDescription>
@@ -399,10 +399,10 @@ export default function Dashboard() {
                   onChange={(e) => setHalfPaymentAmount(e.target.value)}
                   placeholder="Enter amount paid"
                   className="mt-1"
-                  max={calculateTotal() * 1.08}
+                  max={calculateTotal()}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Total amount: ₦{(calculateTotal() * 1.08).toFixed(2)}
+                  Total amount: ₦{(calculateTotal())}
                 </p>
               </div>
             )}
@@ -425,26 +425,11 @@ export default function Dashboard() {
                       className="h-8 px-2 border rounded text-sm"
                     >
                       <option value="all">All Categories</option>
-                    
-                    <option value="Casing">Casing</option>
-                      <option value="Remote_xhorse">Remote Xhorse</option>
-                      <option value="Remote_keyDiy">Remote KeyDiy</option>
-                      <option value="Valet_Key">Valet Key</option>
-                      <option value="Keyholder">Keyholder</option>
-                      <option value="Jacket">Key Jacket</option>
-                      <option value="Battery">Battery</option>
-                      <option value="Work">Labour</option>
-                      <option value="Blade">Blade</option>
-                      <option value="Emulator">Emulator</option>
-                      <option value="Blade">Blade</option>
-                      <option value="Programming">Programming</option>
-                      <option value="After_Market">After Market</option>
-                      <option value="Pcb">PCB</option>
-                      <option value="Chip">Transponder Chip</option>
-                      <option value="Original">Original Key</option>
-                      <option value="Keyless">Keyless</option>
-                      <option value="OEM">OEM Key</option>
+                      <option value="Detergents">Detergents</option>
+                      <option value="Provisions">Provisions</option>
                       <option value="Others">Others</option>
+                    
+                    
                     </select>
                   </div>
                 </div>
@@ -530,7 +515,7 @@ export default function Dashboard() {
                               +
                             </Button>
                           </div>
-                          <span className="text-sm font-medium">₦{(product.price * product.quantity).toFixed(2)}</span>
+                          <span className="text-sm font-medium">₦{(product.price * product.quantity)}</span>
                         </div>
                       </div>
                     ))
@@ -540,17 +525,17 @@ export default function Dashboard() {
                 {selectedProducts.length > 0 && (
                   <div className="mt-4 p-3 bg-blue-50 rounded border">
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      {/* <div className="flex justify-between text-sm">
                         <span>Subtotal:</span>
                         <span>₦{calculateTotal().toFixed(2)}</span>
                       </div>
-{/*                       <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-sm">
                         <span>Tax (8%):</span>
                         <span>₦{(calculateTotal() * 0.08).toFixed(2)}</span>
                       </div> */}
                       <div className="border-t pt-2 flex justify-between font-bold">
                         <span>Total:</span>
-                        <span>₦{(calculateTotal() ).toFixed(2)}</span>
+                        <span>₦{(calculateTotal())}</span>
                       </div>
                     </div>
                   </div>
@@ -562,7 +547,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">
-                    {selectedProducts.length} items • ₦{(calculateTotal() * 1.08).toFixed(2)} total
+                    {selectedProducts.length} items • ₦{(calculateTotal())} total
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -595,4 +580,3 @@ export default function Dashboard() {
     </div>
   )
 }
-

@@ -23,18 +23,28 @@ import { Product } from "@/lib/products"
 import { toast } from "sonner"
 
 export default function SalesPage() {
+
+  const [productSearchTerm, setProductSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [customerName, setCustomerName] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState("")
+  const [halfPaymentAmount, setHalfPaymentAmount] = useState("")
+
   const [searchTerm, setSearchTerm] = useState("")
   const [isQuickSaleOpen, setIsQuickSaleOpen] = useState(false)
   const [sales, setSales] = useState<Sale[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<'admin' | 'user' | null>(null)
+  // const [selectedProducts, setSelectedProducts] = useState<
+  //   Array<{ id: string; name: string; price: number; quantity: number }>
+  // >([])
   const [selectedProducts, setSelectedProducts] = useState<
-    Array<{ id: string; name: string; price: number; quantity: number }>
+    Array<{ id: string; name: string; price: number; quantity: number; stock: number }>
   >([])
-  const [customerName, setCustomerName] = useState("")
-  const [paymentMethod, setPaymentMethod] = useState("")
-  const [halfPaymentAmount, setHalfPaymentAmount] = useState("")
+  const [hasExistingPartialPayment, setHasExistingPartialPayment] = useState(false)
+  const [existingPartialPayment, setExistingPartialPayment] = useState<Sale | null>(null)
+ 
 
   useEffect(() => {
     fetchData()
@@ -52,21 +62,25 @@ export default function SalesPage() {
     }
   }, [])
 
+  useEffect(() => {
+    checkExistingPartialPayment(customerName)
+  }, [customerName, paymentMethod])
+
   const fetchData = async () => {
     try {
-      const [salesRes, productsRes] = await Promise.all([
-        fetch('/api/sales'),
-        fetch('/api/products')
+      const [productsRes, salesRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/sales')
       ])
-
-      if (salesRes.ok) {
-        const salesData = await salesRes.json()
-        setSales(salesData)
-      }
 
       if (productsRes.ok) {
         const productsData = await productsRes.json()
         setProducts(productsData)
+      }
+
+      if (salesRes.ok) {
+        const salesData = await salesRes.json()
+        setSales(salesData)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -75,16 +89,22 @@ export default function SalesPage() {
     }
   }
 
+
   const addToSale = (product: Product) => {
     const existing = selectedProducts.find((p) => p.id === product._id)
     if (existing) {
-      setSelectedProducts(selectedProducts.map((p) => (p.id === product._id ? { ...p, quantity: p.quantity + 1 } : p)))
+      if (existing.quantity < product.stock) {
+        setSelectedProducts(selectedProducts.map((p) => (p.id === product._id ? { ...p, quantity: p.quantity + 1 } : p)))
+      } else {
+        toast.warning(`Only ${product.stock} items available in stock`)
+      }
     } else {
       setSelectedProducts([...selectedProducts, { 
         id: product._id!, 
         name: product.name, 
         price: product.price, 
-        quantity: 1 
+        quantity: 1, 
+        stock: product.stock 
       }])
     }
   }
@@ -94,15 +114,52 @@ export default function SalesPage() {
   }
 
   const updateQuantity = (productId: string, quantity: number) => {
+    const product = products.find((p) => p._id === productId)
+    if (!product) return
+
     if (quantity <= 0) {
       removeFromSale(productId)
-    } else {
+    } else if (quantity <= product.stock) {
       setSelectedProducts(selectedProducts.map((p) => (p.id === productId ? { ...p, quantity } : p)))
+    } else {
+      toast.warning(`Only ₦{product.stock} items available in stock`)
     }
   }
 
   const calculateTotal = () => {
     return selectedProducts.reduce((total, product) => total + product.price * product.quantity, 0)
+  }
+
+  const checkExistingPartialPayment = async (customerName: string) => {
+    if (paymentMethod === "Half Payment" && customerName) {
+      try {
+        const response = await fetch('/api/sales')
+        if (response.ok) {
+          const allSales = await response.json()
+          const customerNameToCheck = customerName || "Walk-in Customer"
+          
+          // Find partial payment records for this customer
+          const customerPartialPayments = allSales.filter(
+            (sale: Sale) => sale.customerName === customerNameToCheck && sale.status === "Partial Payment"
+          )
+          
+          // Get the most recent one
+          const existing = customerPartialPayments.length > 0 
+            ? customerPartialPayments.sort((a: Sale, b: Sale) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              )[0]
+            : null
+          
+          setHasExistingPartialPayment(!!existing)
+          setExistingPartialPayment(existing || null)
+        }
+      } catch (error) {
+        console.error('Error checking existing partial payments:', error)
+      }
+    } else {
+      setHasExistingPartialPayment(false)
+      setExistingPartialPayment(null)
+    }
   }
 
   const completeSale = async () => {
@@ -116,12 +173,83 @@ export default function SalesPage() {
       return
     }
 
-    if (paymentMethod === "Half Payment" && (!halfPaymentAmount || parseFloat(halfPaymentAmount) <= 0)) {
-      toast.warning("Please enter a valid payment amount")
+    if (paymentMethod === "Half Payment" && (!halfPaymentAmount || parseFloat(halfPaymentAmount) < 0)) {
+      toast.warning("Please enter a valid payment amount (0 or greater)")
       return
     }
 
     try {
+      // Check if this is a half payment and if customer already has partial payments
+      if (paymentMethod === "Half Payment") {
+        const customerNameToCheck = customerName || "Walk-in Customer"
+        
+        // Get all sales and find partial payments for this customer
+        const allSalesResponse = await fetch('/api/sales')
+        const allSales = await allSalesResponse.json()
+        
+        // Find the most recent partial payment for this customer
+        const customerPartialPayments = allSales.filter(
+          (sale: Sale) => sale.customerName === customerNameToCheck && sale.status === "Partial Payment"
+        )
+        
+        if (customerPartialPayments.length > 0) {
+          // Get the most recent partial payment
+          const latestPartialPayment = customerPartialPayments.sort((a: Sale, b: Sale) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )[0]
+          
+          console.log('Found existing partial payment for consolidation:', {
+            customerName: customerNameToCheck,
+            existingId: latestPartialPayment._id,
+            existingTotal: latestPartialPayment.total,
+            existingBalance: latestPartialPayment.remainingBalance
+          })
+          
+          // Prepare consolidation data
+          const additionalPayment = parseFloat(halfPaymentAmount)
+          const newItems = selectedProducts.map(p => ({
+            productId: p.id,
+            name: p.name,
+            quantity: p.quantity,
+            price: p.price,
+            total: p.price * p.quantity
+          }))
+          
+          // Call consolidation API
+          const consolidateResponse = await fetch(`/api/sales/${latestPartialPayment._id}/consolidate`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              additionalPayment,
+              newItems 
+            }),
+          })
+
+          if (consolidateResponse.ok) {
+            const updatedSale = await consolidateResponse.json()
+            console.log('Consolidation successful:', updatedSale)
+            toast.success("Items and payment added to existing record successfully!")
+            setSelectedProducts([])
+            setCustomerName("")
+            setPaymentMethod("")
+            setHalfPaymentAmount("")
+            setIsQuickSaleOpen(false)
+            fetchData() // Refresh data
+            return
+          } else {
+            const errorData = await consolidateResponse.json()
+            console.error('Consolidation failed:', errorData)
+            toast.error(`Failed to consolidate: ${errorData.message}`)
+            return
+          }
+        } else {
+          console.log('No existing partial payment found, will create new record')
+        }
+      }
+
+      // Create new sale record
       const saleData = {
         customerName: customerName || "Walk-in Customer",
         items: selectedProducts.map(p => ({
@@ -160,12 +288,23 @@ export default function SalesPage() {
     }
   }
 
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(productSearchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
+
+  const lowStockItems = products.filter(p => p.stock <= p.minStock)
+  const recentSales = sales.slice(0, 5)
+
+
   const filteredSales = sales.filter(
     (sale) =>
       sale.invoiceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
+  
   const todaySales = sales
     .filter(sale => new Date(sale.createdAt).toDateString() === new Date().toDateString())
     .reduce((sum, sale) => sum + sale.total, 0)
@@ -202,151 +341,255 @@ export default function SalesPage() {
               <h1 className="text-3xl font-bold text-gray-900">Sales</h1>
               <p className="text-gray-600">Record and manage your store transactions</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Dialog open={isQuickSaleOpen} onOpenChange={setIsQuickSaleOpen}>
-                <DialogTrigger asChild>
+            <Dialog open={isQuickSaleOpen} onOpenChange={setIsQuickSaleOpen}>
+            <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     New Sale
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[700px]">
-                  <DialogHeader>
-                    <DialogTitle>Quick Sale</DialogTitle>
-                    <DialogDescription>Select products to create a new sale transaction.</DialogDescription>
-                  </DialogHeader>
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Quick Sale</DialogTitle>
+              <DialogDescription>Select products to create a new sale transaction.</DialogDescription>
+            </DialogHeader>
+           
 
-                  {/* Customer Info */}
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="text-sm font-medium">Customer Name (Optional)</label>
-                      <Input
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Enter customer name"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Payment Method *</label>
-                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select payment method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Cash">Cash</SelectItem>
-                          <SelectItem value="Debit Card">Debit Card</SelectItem>
-                          <SelectItem value="Half Payment">Half Payment</SelectItem>
-                          <SelectItem value="Transfer">Transfer</SelectItem>
-                        </SelectContent>
-                      </Select>
+            {/* Customer Info */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium">Customer Name (Optional)</label>
+                <Input
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Enter customer name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Payment Method *</label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="mt-1 h-9 px-3 border rounded w-full"
+                >
+                  <option value="">Select payment method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Half Payment">Half Payment</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Half Payment Amount Input */}
+            {paymentMethod === "Half Payment" && (
+              <div className="mb-4">
+                <label className="text-sm font-medium">Amount Paid *</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={halfPaymentAmount}
+                  onChange={(e) => setHalfPaymentAmount(e.target.value)}
+                  placeholder="Enter amount paid"
+                  className="mt-1"
+                  max={calculateTotal() }
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Total amount: ₦{calculateTotal()}
+                </p>
+                {hasExistingPartialPayment && existingPartialPayment && (
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-green-800">
+                          <strong>✓ Consolidation Active!</strong> This will be added to existing invoice {existingPartialPayment.invoiceId}
+                        </p>
+                        <p className="text-xs text-green-600 mt-1">
+                          Current balance: ₦{(existingPartialPayment.remainingBalance || 0).toFixed(2)} | Total items: {existingPartialPayment.items?.length || 0}
+                        </p>
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
 
-                  {paymentMethod === "Half Payment" && (
-                    <div className="mb-4">
-                      <label className="text-sm font-medium">Amount Paid *</label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={halfPaymentAmount}
-                        onChange={(e) => setHalfPaymentAmount(e.target.value)}
-                        placeholder="Enter amount paid"
-                        className="mt-1"
-                        max={calculateTotal()}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Total amount: ₦{calculateTotal().toFixed(2)}
-                      </p>
+            <div className="grid grid-cols-3 gap-4 py-4">
+              {/* Product Selection */}
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium">Available Products ({filteredProducts.length})</h4>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Search products..."
+                      value={productSearchTerm}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      className="w-48 h-8"
+                    />
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="h-8 px-2 border rounded text-sm"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="Detergents">Detergents</option>
+                      <option value="Provisions">Provisions</option>
+                      <option value="Others">Others</option>
+                    
+                    
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto border rounded p-2">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product._id}
+                      className="flex items-center justify-between p-3 border rounded hover:bg-gray-50"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-gray-500">₦{product.price}</p>
+                          <p className={`text-xs ${product.stock <= 10 ? "text-orange-600" : "text-green-600"}`}>
+                            {product.stock} in stock
+                          </p>
+                        </div>
+                        <p className="text-xs text-blue-600">{product.category}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => addToSale(product)}
+                        disabled={product.stock === 0}
+                        className="ml-2"
+                      >
+                        {product.stock === 0 ? "Out" : "Add"}
+                      </Button>
+                    </div>
+                  ))}
+
+                  {filteredProducts.length === 0 && (
+                    <div className="col-span-2 text-center py-8 text-gray-500">
+                      No products found matching your search criteria
                     </div>
                   )}
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-4 py-4">
-                    {/* Product Selection */}
-                    <div>
-                      <h4 className="font-medium mb-3">Available Products</h4>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {products.map((product) => (
-                          <div key={product._id} className="flex items-center justify-between p-2 border rounded">
-                            <div>
-                              <p className="font-medium text-sm">{product.name}</p>
-                              <p className="text-xs text-gray-500">
-                                ₦{product.price} • {product.stock} in stock
-                              </p>
-                            </div>
-                            <Button size="sm" onClick={() => addToSale(product)} disabled={product.stock === 0}>
-                              Add
+              {/* Cart */}
+              <div className="border-l pl-4">
+                <h4 className="font-medium mb-3">Sale Items ({selectedProducts.length})</h4>
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {selectedProducts.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 text-sm">
+                      <ShoppingCart className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      No items selected
+                    </div>
+                  ) : (
+                    selectedProducts.map((product) => (
+                      <div key={product.id} className="p-2 bg-gray-50 rounded border">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{product.name}</p>
+                            <p className="text-xs text-gray-500">₦{product.price} each</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeFromSale(product.id)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(product.id, product.quantity - 1)}
+                              className="h-6 w-6 p-0"
+                            >
+                              -
+                            </Button>
+                            <span className="w-8 text-center text-sm font-medium">{product.quantity}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(product.id, product.quantity + 1)}
+                              className="h-6 w-6 p-0"
+                            >
+                              +
                             </Button>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Cart */}
-                    <div>
-                      <h4 className="font-medium mb-3">Sale Items</h4>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {selectedProducts.length === 0 ? (
-                          <p className="text-gray-500 text-sm">No items selected</p>
-                        ) : (
-                          selectedProducts.map((product) => (
-                            <div key={product.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <div>
-                                <p className="font-medium text-sm">{product.name}</p>
-                                <p className="text-xs text-gray-500">₦{product.price} each</p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => updateQuantity(product.id, product.quantity - 1)}
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className="w-8 text-center text-sm">{product.quantity}</span>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => updateQuantity(product.id, product.quantity + 1)}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => removeFromSale(product.id)}>
-                                  Remove
-                                </Button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {selectedProducts.length > 0 && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">Total:</span>
-                            <span className="text-xl font-bold">₦{calculateTotal().toFixed(2)}</span>
-                          </div>
+                          <span className="text-sm font-medium">₦{(product.price * product.quantity)}</span>
                         </div>
-                      )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {selectedProducts.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded border">
+                    <div className="space-y-2">
+                      {/* <div className="flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span>₦{calculateTotal().toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Tax (8%):</span>
+                        <span>₦{(calculateTotal() * 0.08).toFixed(2)}</span>
+                      </div> */}
+                      <div className="border-t pt-2 flex justify-between font-bold">
+                        <span>Total:</span>
+                        <span>₦{calculateTotal()}</span>
+                      </div>
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => {
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">
+                    {selectedProducts.length} items • ₦{calculateTotal()} total
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
                       setIsQuickSaleOpen(false)
                       setSelectedProducts([])
+                      setProductSearchTerm("")
+                      setSelectedCategory("all")
                       setCustomerName("")
                       setPaymentMethod("")
                       setHalfPaymentAmount("")
-                    }}>
-                      Cancel
-                    </Button>
-                    <Button onClick={completeSale} disabled={selectedProducts.length === 0}>
-                      Complete Sale
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={completeSale}
+                    disabled={selectedProducts.length === 0 || !paymentMethod}
+                  >
+                    Complete Sale
+                  </Button>
+                </div>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
           </div>
 
           {/* Stats Cards */}

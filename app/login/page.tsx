@@ -63,7 +63,7 @@ export default function LoginPage() {
           <div className="flex justify-center">
             <Store className="h-12 w-12 text-blue-600" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in to Auto View Store</h2>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in to Unique Store</h2>
           <p className="mt-2 text-sm text-gray-600">
             Don't have an account?{" "}
             <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">

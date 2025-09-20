@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     
     const invoiceId = await generateInvoiceId()
     
-    const subtotal = saleData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
-    const tax = subtotal * 0.08
-    const total = subtotal + tax
+    const total = saleData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
+    const subtotal = total
+    const tax = 0
 
     let status = 'Completed'
     let amountPaid = total

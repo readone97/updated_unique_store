@@ -438,9 +438,25 @@ export default function SalesPage() {
                       className="h-8 px-2 border rounded text-sm"
                     >
                       <option value="all">All Categories</option>
-                      <option value="Detergents">Detergents</option>
-                      <option value="Provisions">Provisions</option>
-                      <option value="Others">Others</option>
+                       <option value="Casing">Casing</option>
+                      <option value="Remote_xhorse">Remote Xhorse</option>
+                      <option value="Remote_keyDiy">Remote KeyDiy</option>
+                      <option value="Valet_Key">Valet Key</option>
+                      <option value="Keyholder">Keyholder</option>
+                      <option value="Jacket">Key Jacket</option>
+                      <option value="Battery">Battery</option>
+                       <option value="Programming">Programming</option>
+                      <option value="After_Market">After Market</option>
+                      <option value="Work">Labour</option>
+                      <option value="Blade">Blade</option>
+                      <option value="Emulator">Emulator</option>
+                      <option value="Blade">Blade</option>
+                      <option value="Pcb">PCB</option>
+                      <option value="Chip">Transponder Chip</option>
+                      <option value="Original">Original Key</option>
+                      <option value="Keyless">Keyless</option>
+                      <option value="OEM">OEM Key</option>
+                      <option value="Others">Others</option> 
                     
                     
                     </select>
@@ -711,3 +727,4 @@ export default function SalesPage() {
     </div>
   )
 }
+

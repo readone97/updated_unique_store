@@ -333,12 +333,25 @@ export default function ProductsPage() {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                
-                      <SelectItem value="Detergents">Detergents</SelectItem>
-                      <SelectItem value="Provisions">Provisions</SelectItem>
+                     <SelectItem value="Casing">Casing</SelectItem>
+                      <SelectItem value="Remote_xhorse">Remote Xhorse</SelectItem>
+                      <SelectItem value="Remote_keyDiy">Remote KeyDiy</SelectItem>
+                      <SelectItem value="Valet_Key">Valet Key</SelectItem>
+                      <SelectItem value="Keyholder">Keyholder</SelectItem>
+                      <SelectItem value="Jacket">Key Jacket</SelectItem>
+                      <SelectItem value="Battery">Battery</SelectItem>
+                       <SelectItem value="Programming">Programming</SelectItem>
+                      <SelectItem value="After_Market">After Market</SelectItem>
+                      <SelectItem value="Work">Labour</SelectItem>
+                      <SelectItem value="Blade">Blade</SelectItem>
+                      <SelectItem value="Emulator">Emulator</SelectItem>
+                      <SelectItem value="Blade">Blade</SelectItem>
+                      <SelectItem value="Pcb">PCB</SelectItem>
+                      <SelectItem value="Chip">Transponder Chip</SelectItem>
+                      <SelectItem value="Original">Original Key</SelectItem>
+                      <SelectItem value="Keyless">Keyless</SelectItem>
+                      <SelectItem value="OEM">OEM Key</SelectItem>
                       <SelectItem value="Others">Others</SelectItem>
-                 
-
                         </SelectContent>
                       </Select>
                     </div>
@@ -448,8 +461,24 @@ export default function ProductsPage() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                      <SelectItem value="Detergents">Detergents</SelectItem>
-                      <SelectItem value="Provisions">Provisions</SelectItem>
+                       <SelectItem value="Casing">Casing</SelectItem>
+                      <SelectItem value="Remote_xhorse">Remote Xhorse</SelectItem>
+                      <SelectItem value="Remote_keyDiy">Remote KeyDiy</SelectItem>
+                      <SelectItem value="Valet_Key">Valet Key</SelectItem>
+                      <SelectItem value="Keyholder">Keyholder</SelectItem>
+                      <SelectItem value="Jacket">Key Jacket</SelectItem>
+                      <SelectItem value="Battery">Battery</SelectItem>
+                       <SelectItem value="Programming">Programming</SelectItem>
+                      <SelectItem value="After_Market">After Market</SelectItem>
+                      <SelectItem value="Work">Labour</SelectItem>
+                      <SelectItem value="Blade">Blade</SelectItem>
+                      <SelectItem value="Emulator">Emulator</SelectItem>
+                      <SelectItem value="Blade">Blade</SelectItem>
+                      <SelectItem value="Pcb">PCB</SelectItem>
+                      <SelectItem value="Chip">Transponder Chip</SelectItem>
+                      <SelectItem value="Original">Original Key</SelectItem>
+                      <SelectItem value="Keyless">Keyless</SelectItem>
+                      <SelectItem value="OEM">OEM Key</SelectItem>
                       <SelectItem value="Others">Others</SelectItem>
                       </SelectContent>
                     </Select>
@@ -542,10 +571,25 @@ export default function ProductsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    
-                    <SelectItem value="Detergents">Detergents</SelectItem>
-                      <SelectItem value="Provisions">Provisions</SelectItem>
-                      <SelectItem value="Others">Others</SelectItem>
+                       <SelectItem value="Casing">Casing</SelectItem>
+                      <SelectItem value="Remote_xhorse">Remote Xhorse</SelectItem>
+                      <SelectItem value="Remote_keyDiy">Remote KeyDiy</SelectItem>
+                      <SelectItem value="Valet_Key">Valet Key</SelectItem>
+                      <SelectItem value="Keyholder">Keyholder</SelectItem>
+                      <SelectItem value="Jacket">Key Jacket</SelectItem>
+                      <SelectItem value="Battery">Battery</SelectItem>
+                       <SelectItem value="Programming">Programming</SelectItem>
+                      <SelectItem value="After_Market">After Market</SelectItem>
+                      <SelectItem value="Work">Labour</SelectItem>
+                      <SelectItem value="Blade">Blade</SelectItem>
+                      <SelectItem value="Emulator">Emulator</SelectItem>
+                      <SelectItem value="Blade">Blade</SelectItem>
+                      <SelectItem value="Pcb">PCB</SelectItem>
+                      <SelectItem value="Chip">Transponder Chip</SelectItem>
+                      <SelectItem value="Original">Original Key</SelectItem>
+                      <SelectItem value="Keyless">Keyless</SelectItem>
+                      <SelectItem value="OEM">OEM Key</SelectItem>
+                      <SelectItem value="Others">Others</SelectItem>  
                   </SelectContent>
                 </Select>
                 <Button variant="outline">
@@ -630,3 +674,4 @@ export default function ProductsPage() {
     </div>
   )
 }
+

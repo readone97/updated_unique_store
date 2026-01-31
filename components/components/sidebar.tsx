@@ -87,9 +87,8 @@ export function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 space-y-2">
         {!collapsed && <LogoutButton />}
-        {!collapsed && <div className="text-xs text-gray-500 text-center">AutoView</div>}
+        {!collapsed && <div className="text-xs text-gray-500 text-center">AutoView </div>}
       </div>
     </div>
   )
 }
-

@@ -53,7 +53,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="flex items-center space-x-2">
               <Store className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Unique Store</span>
+              <span className="text-xl font-bold text-gray-900">AutoView </span>
             </div>
           )}
           <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="h-8 w-8 p-0">
@@ -87,7 +87,7 @@ export function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 space-y-2">
         {!collapsed && <LogoutButton />}
-        {!collapsed && <div className="text-xs text-gray-500 text-center">Unique Store</div>}
+        {!collapsed && <div className="text-xs text-gray-500 text-center">AutoView</div>}
       </div>
     </div>
   )
